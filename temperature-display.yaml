@@ -1,0 +1,353 @@
+substitutions:
+  device_name: temperature-display
+  friendly_name: Temperature Sensor Display
+  log_level: WARN
+
+packages:
+  core: !include common/configuration.yaml
+  board: !include boards/esp8266-feather-huzzah.yaml
+
+i2c:
+  - id: bus_a
+    sda: GPIO4 # labled SCL on the board
+    scl: GPIO5 # labled SDA 
+    scan: true
+    frequency: 800kHz
+
+#spi:
+#  - id: sbus_a
+#    clk_pin: GPIO14   # labled SCK
+#    mosi_pin: GPIO13  # MU
+#    miso_pin: GPIO12  # MI
+
+# GPIO pins: 0, 2, 4, 5, 12, 13, 14, 15, 16.
+# 3v3 logic 12mA max
+# GPIO 0  Red LED. No internal pull-up
+# GPIO 2  Blue LED. Has a pull-up resistor 
+#  number: GPIO2
+#  inverted: true
+# GPIO 12 SCK
+# GPIO 13 MOSI
+# GPIO 14 MISO
+# GPIO 15 . Has a pull-down resistor
+# GPIO 16 Can wake from deep-sleep if connected to RESET
+
+# deep_sleep:
+#   run_duration: 10s
+#   sleep_duration: 60s
+#   id: deep_sleep_1
+
+web_server:
+  port: 80
+
+# Sensors: outside_temperature
+sensor:
+  - platform: homeassistant
+    id: outside_temperature
+    entity_id: sensor.weather_temperature
+    internal: true
+    # on_value:
+    #   then:
+    #     - globals.set:
+    #         id: outside_temperature_stored
+    #         value: !lambda 'return x;'
+    #     - deep_sleep.enter:
+    #         id: deep_sleep_1
+    #         sleep_duration: 1min
+  - platform: bmp280
+    temperature:
+      name: "BME280 Temperature"
+      id: inside_temperature
+      oversampling: 16x
+    pressure:
+      name: "BME280 Pressure"
+    address: 0x76
+#    update_interval: 60s
+
+# Aborted. 
+# Was going to try to set a global variable, then update it when a sensor value updates. Call the global variable from the display component
+globals:
+  # - id: outside_temperature_stored
+  #   type: std::string
+  #   restore_value: no
+  #   initial_value: ''
+  - id: display_temperature_text_head
+    type: std::string
+    restore_value: no
+    initial_value: '"outside"'
+  - id: display_temperature_head_y
+    type: int
+    restore_value: no
+    initial_value: '3'
+  - id: display_temperature_head_x
+    type: int
+    restore_value: no
+    initial_value: '1'
+
+  - id: display_temperature_text_subhead
+    type: std::string
+    restore_value: no
+    initial_value: '"temp"'
+  - id: display_temperature_subhead_y
+    type: int
+    restore_value: no
+    initial_value: '9'
+  - id: display_temperature_subhead_x
+    type: int
+    restore_value: no
+    initial_value: '18'
+
+  - id: display_temperature_text_bodya
+    type: std::string
+    restore_value: no
+    initial_value: '"inside"'
+  - id: display_temperature_bodya_y
+    type: int
+    restore_value: no
+    initial_value: '24'
+  - id: display_temperature_bodya_x
+    type: int
+    restore_value: no
+    initial_value: '80'
+
+  - id: display_temperature_text_bodyb
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: display_temperature_bodyb_y
+    type: int
+    restore_value: no
+    initial_value: '8'
+  - id: display_temperature_bodyb_x
+    type: int
+    restore_value: no
+    initial_value: '77'
+
+  - id: display_temperature_y
+    type: int
+    restore_value: no
+    initial_value: '5'
+  - id: display_temperature_x
+    type: int
+    restore_value: no
+    initial_value: '50'
+  #- id: display_temperature_align # trying select instead
+  #  type: char
+  #  restore_value: no
+  #  initial_value: 'TOP_RIGHT'
+
+select:
+  - platform: template
+    name: Temperature Text Alignment
+    id: display_temperature_align
+    options:
+      - "TextAlign::TOP_RIGHT"
+      - BASELINE_LEFT
+    optimistic: true
+    initial_option: "TextAlign::TOP_RIGHT"
+#  on_value:
+#    then:
+#      - logger.log:
+#          format: "Chosen option: %s (index %d)"
+#          args: ["x.c_str()", "i"]
+        
+api:
+  services:
+    - service: set_display_temperature_text_head
+      variables:
+        text: string
+      then:
+        - globals.set:
+            id: display_temperature_text_head
+            value: !lambda 'return text;'
+        - logger.log: 
+            format: "Head text now changed to %sx"
+            args: [ 'id(display_temperature_text_head).c_str()' ]
+    - service: set_display_temperature_text_subhead
+      variables:
+        text: string
+      then:
+        - globals.set:
+            id: display_temperature_text_subhead
+            value: !lambda 'return text;'
+        - logger.log: 
+            format: "Subhead text now changed to %sx"
+            args: [ 'id(display_temperature_text_subhead).c_str()' ]
+    - service: set_display_temperature_text_bodya
+      variables:
+        text: string
+      then:
+        - globals.set:
+            id: display_temperature_text_bodya
+            value: !lambda 'return text;'
+        - logger.log: 
+            format: "Body A text now changed to %sx"
+            args: [ 'id(display_temperature_text_bodya).c_str()' ]
+    - service: set_display_temperature_text_bodyb
+      variables:
+        text: string
+      then:
+        - globals.set:
+            id: display_temperature_text_bodyb
+            value: !lambda 'return text;'
+        - logger.log: 
+            format: "Body B text now changed to %sx"
+            args: [ 'id(display_temperature_text_bodyb).c_str()' ]
+    - service: set_display_temperature_position
+      variables:
+        y_position: int
+        x_position: int
+      then:
+        - globals.set:
+            id: display_temperature_y
+            value: !lambda 'return y_position;'
+        - globals.set:
+            id: display_temperature_x
+            value: !lambda 'return x_position;'
+        - logger.log: 
+            format: "Temperature position changed to %ix%i"
+            args: [ 'id(display_temperature_y)', 'id(display_temperature_x)' ]
+    - service: set_display_temperature_head_position
+      variables:
+        head_y_position: int
+        head_x_position: int
+      then:
+        - globals.set:
+            id: display_temperature_head_y
+            value: !lambda 'return head_y_position;'
+        - globals.set:
+            id: display_temperature_head_x
+            value: !lambda 'return head_x_position;'
+        - logger.log: 
+            format: "Head position changed to %ix%i"
+            args: [ 'id(display_temperature_head_y)', 'id(display_temperature_head_x)' ]
+    - service: set_display_temperature_subhead_position
+      variables:
+        subhead_y_position: int
+        subhead_x_position: int
+      then:
+        - globals.set:
+            id: display_temperature_subhead_y
+            value: !lambda 'return subhead_y_position;'
+        - globals.set:
+            id: display_temperature_subhead_x
+            value: !lambda 'return subhead_x_position;'
+        - logger.log: 
+            format: "Subhead position changed to %ix%i"
+            args: [ 'id(display_temperature_subhead_y)', 'id(display_temperature_subhead_x)' ]
+
+    - service: set_display_temperature_bodya_position
+      variables:
+        bodya_y_position: int
+        bodya_x_position: int
+      then:
+        - globals.set:
+            id: display_temperature_bodya_y
+            value: !lambda 'return bodya_y_position;'
+        - globals.set:
+            id: display_temperature_bodya_x
+            value: !lambda 'return bodya_x_position;'
+        - logger.log: 
+            format: "Body A position changed to %ix%i"
+            args: [ 'id(display_temperature_bodya_y)', 'id(display_temperature_bodya_x)' ]
+
+    - service: set_display_temperature_bodyb_position
+      variables:
+        bodyb_y_position: int
+        bodyb_x_position: int
+      then:
+        - globals.set:
+            id: display_temperature_bodyb_y
+            value: !lambda 'return bodyb_y_position;'
+        - globals.set:
+            id: display_temperature_bodyb_x
+            value: !lambda 'return bodyb_x_position;'
+        - logger.log: 
+            format: "Body B position changed to %ix%i"
+            args: [ 'id(display_temperature_bodyb_y)', 'id(display_temperature_bodyb_x)' ]
+
+# Fonts: montserrat_thin, montserrat_regular, montserrat_bold
+font:
+  - file: "fonts/Montserrat-Thin.ttf"
+    id: montserrat_thin
+    size: 14
+  - file: "fonts/Montserrat-Regular.ttf"
+    id: montserrat_regular
+    size: 10
+  - file: "fonts/Montserrat-Regular.ttf"
+    id: montserrat_regular_24pt
+    size: 24
+  - file: "fonts/Montserrat-ExtraLight.ttf"
+    id: montserrat_extralight
+    size: 11
+  - file: "fonts/Montserrat-Regular.ttf"
+    id: montserrat_regular_20pt
+    size: 20
+ # - file: "fonts/Montserrat-ExtraLight.ttf"
+ #   id: montserrat_extralight_lambdasize
+ #   size: !lambda |-       # not templatable
+ #     return id(display_lambda_temp_size).state;
+
+
+# Testig the color component for text color. Can I call it's ID in the lambda?
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    id: my_display
+    pages: 
+      - id: page1
+        lambda: |-
+          //it.print(0, 15, id(montserrat_regular), TextAlign::BASELINE_LEFT, "outside");
+          it.printf(id(display_temperature_head_x), id(display_temperature_head_y), id(montserrat_regular), "%s", id(display_temperature_text_head).c_str());
+          it.printf(id(display_temperature_subhead_x), id(display_temperature_subhead_y), id(montserrat_regular), "%s", id(display_temperature_text_subhead).c_str());
+          it.printf(id(display_temperature_bodya_x), id(display_temperature_bodya_y), id(montserrat_regular), "%s", id(display_temperature_text_bodya).c_str());
+          //it.printf(id(display_temperature_bodyb_x), id(display_temperature_bodyb_y), id(montserrat_regular), "%s", id(display_temperature_text_bodyb).c_str());
+
+          // Print time in HH:MM format
+          //it.strftime(128, 0, id(montserrat_extralight), TextAlign::TOP_RIGHT, "%H:%M", id(homeassistant_time).now());
+
+          //if (id(outside_temperature_stored).has_state()) {
+          //  it.printf(50, 13, id(montserrat_thin), TextAlign::BASELINE_LEFT, "%.1C°f", id(outside_temperature_stored).state);
+          //}
+          it.printf(50, 15, id(montserrat_regular_20pt), "%.1f°C", id(outside_temperature).state);
+          //it.printf(50, 15, id(montserrat_regular_20pt), "%s", id(outside_temperature_stored).c_str());
+
+
+          // Try to use a variable for text position
+          //it.printf(id(display_temperature_x), id(display_temperature_y), id(montserrat_thin), "%.1C°f", id(outside_temperature_stored).state);
+
+          // Syntax is always: it.print(<x>, <y>, <font>, [color=COLOR_ON], [align=TextAlign::TOP_LEFT], <text>);
+          // it.print(0, 0, id(my_font), COLOR_ON, "Left aligned");
+          it.printf(id(display_temperature_bodyb_x), id(display_temperature_bodyb_y), id(montserrat_extralight), "%.f", id(inside_temperature).state);
+      - id: page2
+        lambda: |-
+          it.strftime(64, 21, id(montserrat_regular_24pt), TextAlign::CENTER, "%HH:%MM", id(homeassistant_time).now());
+
+interval:
+  - interval: 5s
+    then:
+      - display.page.show_next: my_display
+      - component.update: my_display
+#i2c:
+#   - id: bus_a
+#     sda: GPIO4 # labled SCL on the board
+#     scl: GPIO5 # labled SDA 
+#     scan: true
+
+#spi:
+#  - id: sbus_a
+#    clk_pin: GPIO14   # labled SCK
+#    mosi_pin: GPIO13  # MU
+#    miso_pin: GPIO12  # MI
+
+# GPIO pins: 0, 2, 4, 5, 12, 13, 14, 15, 16.
+# 3v3 logic 12mA max
+# GPIO 0  Red LED. No internal pull-up
+# GPIO 2  Blue LED. Has a pull-up resistor 
+#  number: GPIO2
+#  inverted: true
+# GPIO 12 SCK
+# GPIO 13 MOSI
+# GPIO 14 MISO
+# GPIO 15 . Has a pull-down resistor
+# GPIO 16 Can wake from deep-sleep if connected to RESET

@@ -1,0 +1,33 @@
+esphome:
+  name: ${device_name}
+  platform: ESP8266
+  board: huzzah
+
+status_led:
+  pin: 
+    number: GPIO0   # Red LED
+    inverted: true  # Pulling pin low turns on LED
+
+#i2c:
+#   - id: bus_a
+#     sda: GPIO4 # labled SCL on the board
+#     scl: GPIO5 # labled SDA 
+#     scan: true
+
+#spi:
+#  - id: sbus_a
+#    clk_pin: GPIO14   # labled SCK
+#    mosi_pin: GPIO13  # MU
+#    miso_pin: GPIO12  # MI
+
+# GPIO pins: 0, 2, 4, 5, 12, 13, 14, 15, 16.
+# 3v3 logic 12mA max
+# GPIO 0  Red LED. No internal pull-up
+# GPIO 2  Blue LED. Has a pull-up resistor 
+#  number: GPIO2
+#  inverted: true
+# GPIO 12 SCK
+# GPIO 13 MOSI
+# GPIO 14 MISO
+# GPIO 15 . Has a pull-down resistor
+# GPIO 16 Can wake from deep-sleep if connected to RESET

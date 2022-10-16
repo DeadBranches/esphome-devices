@@ -1,0 +1,43 @@
+# Base / core configuration to include in every device
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: ".internal"
+
+# Enable logging
+# Specifiy log level on the command line with
+#   esphome -s level 
+logger:
+  level: ${log_level} board <board> file.yaml
+
+# Enable Home Assistant API
+api:
+#  password: !secret homeassistant_api_password
+
+ota:
+  password: !secret ota_password
+  on_begin:
+    then:
+      - logger.log: "OTA start"
+  on_end:
+    then:
+      - logger.log: "OTA end"
+  on_error:
+    then:
+      - logger.log:
+          format: "OTA update error %d"
+          args: ["x"]
+
+# General Preferences
+preferences:
+  flash_write_interval: 1min
+
+# Ensure time functions reflect HA's time.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Make available to Home Assistant the device's status
+binary_sensor:
+  - platform: status
+    name: "${device_name}_status"
