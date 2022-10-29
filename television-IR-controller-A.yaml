@@ -1,0 +1,36 @@
+substitutions:
+  device_name: television-IR-controller-A
+  friendly_name: Insignia IR Controller
+  log_level: WARN
+
+packages:
+  core: !include common/configuration.yaml
+  board: !include boards/esp8266-nodeMCU-v2.yaml
+
+remote_transmitter:
+  pin: D2
+  carrier_duty_percent: 50%
+  id: ir-transmitter-A
+
+remote_receiver:
+  id: rcvr
+  pin:
+    number: D5
+    # To capture the codes more effectively with directly connected receiver like tsop38238 you can try to use INPUT_PULLUP:
+    inverted: True
+    mode: INPUT_PULLUP
+  dump: raw
+  #dump: all
+
+# Switch Entities
+# These are exposed to Home Assistant
+switch:
+  - platform: template
+    name: "insignia_power"
+    id: insignia_power
+    turn_on_action:
+      remote_transmitter.transmit_nec:
+        transmitter_id: ir-transmitter-A
+        address: 0x61A0
+        command: 0xF00F
+
