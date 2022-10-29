@@ -1,0 +1,85 @@
+# Board configuration for Nodemcu V2 CP2102 ESP-12E
+esphome:
+  name: ${device_name}
+  platform: ESP8266
+  board: nodemcuv2
+
+
+status_led:
+  pin: 
+    #number: GPIO16  # Blue NodeMCU LED
+    #inverted: true
+    number: GPIO2  # Blue Esp-12 LED
+    inverted: true 
+
+
+i2c:
+   - id: bus_a
+     sda: GPIO4  # labled D2
+     scl: GPIO5  # D1
+     scan: true
+
+spi:
+  - id: sbus_a
+    clk_pin: GPIO14   # labled D55
+    mosi_pin: GPIO13  # D8
+    miso_pin: GPIO12  # D6
+
+# REFERENCE INFORMATION
+#
+# Source: RandomNerdTutorials.com
+# https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
+#
+
+## GPIO PIN REFERENCE
+#
+# Pin     Pin   Pin         Sketch Pin          Current-limiting
+#         Silk  Function    Numbers             Resistor
+# GPIO16  D0    WAKE, USER  16, D0, LED_BUILTIN,  470R
+#               LED(B)      BUILTIN_LED
+# GPIO2   D4    U1TXD       2, D4                 470R
+# GPIO5   D1    I/O, SCL 
+# GPIO4   D2    I/O, SDA
+# GPIO14  D5    I/O, SCLK
+# GPIO12  D6    I/O, MISO
+# GPIO13  D7    I/O, MOSI
+# GPIO15  D8    pd/O, CS
+# GPIO3   Rx    I/Rx
+# GPIO1   Tx    Tx/O
+# ADC0    A0    Analog input
+#
+# Note: pd = pulled to GND
+#
+
+## PINS USED DURING BOOT
+# The ESP8266 can be prevented from booting if some pins 
+# are pulled LOW or HIGH. The following list shows the state
+# of the following pins on BOOT:
+#
+# GPIO16: pin is high at BOOT
+# GPIO0: boot failure if pulled LOW
+# GPIO2: pin is high on BOOT, boot failure if pulled LOW
+# GPIO15: boot failure if pulled HIGH
+# GPIO3: pin is high at BOOT
+# GPIO1: pin is high at BOOT, boot failure if pulled LOW
+# GPIO10: pin is high at BOOT
+# GPIO9: pin is high at BOOT
+#
+# Summary:
+# Do not pull pins D3, D4, D8 low at boot.
+
+## PINS HIGH AT BOOT
+# There are certain pins that output a 3.3V signal when the
+# ESP8266 boots. This may be problematic if you have relays 
+# or other peripherals connected to those GPIOs. The following 
+# GPIOs output a HIGH signal on boot:
+#
+#     GPIO16
+#     GPIO3
+#     GPIO1
+#     GPIO10
+#     GPIO9
+#
+# Additionally, the other GPIOs, except GPIO5 and GPIO4, can 
+# output a low-voltage signal at boot, which can be problematic 
+# if these are connected to transistors or relays.
